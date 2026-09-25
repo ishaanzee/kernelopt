@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fast-rfdetr"
+version = "0.1.0"
+description = "RF-DETR-Medium (Ballform basketball fine-tune) on the Apple GPU via MLX + custom Metal kernels"
+requires-python = ">=3.12"
+# mlx is pinned: the custom kernels were validated (bit-exactness, accuracy, thread safety) on this version.
+# onnx is only used the first time a given .onnx file is loaded, to extract its weights into the cache.
+dependencies = ["mlx==0.32.2", "numpy>=2", "onnx>=1.16"]
+
+[tool.setuptools]
+packages = ["fast_rfdetr"]
