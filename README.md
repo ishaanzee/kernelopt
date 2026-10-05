@@ -87,7 +87,7 @@ These are model-only timings for one 640² input at batch 1 in fp32, unless note
 | + `mx.compile` | 32.8 ms | Elementwise fusion and graph-build overhead removed |
 | + fused residual + LayerScale + LayerNorm Metal kernel, biases folded into GEMMs (`addmm`) | 30.9 ms | LayerNorm was 60 µs for a 1.2 MB tensor; the fused kernel runs at memory bandwidth (42 µs fp16) |
 | + deformable-attention sampling kernel, one GEMM for all 4 decoder value projections | ~30 ms | Decoder 3.3 → 2.6 ms. GridSample plus the weighted sum was ~0.7 ms as ~20 gather/elementwise ops per layer |
-| + head-major QKV projection | 29.1 ms | SDPA was silently copying strided q/k/v views (0.15 ms per layer). Projecting straight into `[n, 18, L, 64]` makes the per-head slices contiguous. SDPA's output is already `[B,L,H,D]` in memory, so merging heads is free |
+| + head-major QKV projection | 29.1 ms | The old code split q/k/v with integer indexing (`qkv[0]`). In MLX's Python API that is a gather, which copies every time (0.15 ms per layer); a slice is a free view. Projecting straight into `[n, 18, L, 64]` and slicing `qkv[:, :18]` etc. gives SDPA its inputs with no copy. SDPA's output is already `[B,L,H,D]` in memory, so merging heads is free |
 | + custom fp32 GEMM with fused bias + GELU epilogue (MLP fc1) | 28.1 ms | Uses 8×8 simdgroup matrices loaded straight from device memory (4.3 TFLOPS vs MLX's 4.8), but it drops a 20 MB GELU pass per layer. Output is bit-identical to MLX matmul followed by `mx.erf` GELU |
 | + fused GPU preprocessing | 28.2 ms end to end | Was 4.7 ms on the CPU |
 
@@ -141,8 +141,8 @@ already run at 4.8–5.5.
 5. **Batching** frame + 2 crops saves only ~5% per image (28.2 → 26.7 ms), because the GPU is already compute-bound
    at batch 1. Its value is one call instead of three. Two threads overlap GPU work for +13% throughput (40.0 vs 35.5 calls/s).
 6. **Not attempted, on purpose:**
-   - A flash-attention kernel: MLX's SDPA already runs at ~80% of peak on these shapes. Its real cost was the layout
-     copies, which are fixed.
+   - A flash-attention kernel: MLX's SDPA already runs at ~80% of peak on these shapes. Its real cost was the q/k/v
+     copies from integer indexing, which are fixed.
    - An MPSGraph or Core ML re-export: they can't express the custom kernels, and Core ML's GPU path was at about
      30% of peak.
 
