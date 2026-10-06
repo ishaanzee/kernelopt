@@ -158,7 +158,8 @@ already run at 4.8–5.5.
   - Merge the decoder's small GEMMs (q+k, offsets+weights), about 0.3 ms.
   - Fuse LayerNorm+SiLU in the projector, about 0.2 ms.
   - That would bring the model to ~26 ms.
-- **Pipeline:** the biggest win for Ballform is probably structural. Batch each frame with its side crops (one 80 ms
-  call instead of three 50 ms calls) and keep the two-thread layout. Per-call GPU time drops from ~48 to ~27 ms,
-  which should cut the 4.7 s/clip spent waiting on side-crop calls roughly in half. I haven't measured that inside
-  Ballform.
+- **Pipeline (measured 2026-10-05, didn't pan out):** batching each frame with its side crops into one `raw_batch`
+  call made every Ballform clip slower (+5% to +12% in the best variant). Ballform already runs the full frame one
+  frame ahead on its own thread and the side crops as one batch-2 call, only on the 23–56% of frames that need them,
+  so side-crop waiting was 0.7–1.8 s per clip, not the 4.7 s from the Core ML era. Batching saves only ~5% GPU time
+  per image, and running crops on frames that don't need them slows pose on the shared GPU. Outputs were unchanged.
