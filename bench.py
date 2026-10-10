@@ -1,7 +1,7 @@
 """Benchmark + accuracy check for fast_rfdetr.FastBasketballDetector (optionally side by side with ONNX Runtime + Core ML).
 
     python bench.py                          # MLX detector: load time, latency alone, two threads, accuracy
-    python bench.py --baseline               # also the ORT Core ML EP path exactly as Ballform configures it
+    python bench.py --baseline               # also the ONNX Runtime + Core ML EP path Ballform used before this
     python bench.py --precision fp16         # the faster fp16 variant (see README for its accuracy caveat)
 
 Latencies are end to end: uint8 BGR frame in, (boxes, logits) numpy out, preprocessing included for both paths.
@@ -25,7 +25,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 import kernelopt_paths  # noqa: E402
 from fast_rfdetr.evaluation import accuracy_report, load_reference  # noqa: E402
 from fast_rfdetr.quiet import measured  # noqa: E402
-
 
 
 def stats(ms):
@@ -220,7 +219,7 @@ def main():
         log(f"== fast_rfdetr (MLX, {args.precision}) ==")
         results["mlx"] = bench_mlx(args, frame, crop, crop2, log)
     if args.baseline:
-        log("== ONNX Runtime + Core ML EP (Ballform's current path) ==")
+        log("== ONNX Runtime + Core ML EP (Ballform's original path) ==")
         results["ort_coreml"] = bench_ort(args, frame, crop, crop2, log)
     if args.json:
         Path(args.json).write_text(json.dumps(results, indent=2, default=float))

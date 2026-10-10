@@ -18,7 +18,7 @@ INPUT = 640
 MAX_BATCH = 3
 
 # fp32: meets the golden-output bar robustly (TopK slot order identical to the ONNX fp32 reference).
-# fp16: backbone + projector in fp16 (query selection / decoder stay fp32). ~15% faster, but fp16 noise reorders
+# fp16: backbone + projector in fp16 (query selection / decoder stay fp32). ~12% faster, but fp16 noise reorders
 #       near-tied encoder scores, so some objects land in different query slots and their confidence can move by
 #       ~0.1 versus the fp32 reference. See README.
 PRECISIONS = {

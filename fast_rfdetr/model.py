@@ -148,8 +148,9 @@ class RFDETR:
     def convx(self, x, key):
         w = self.p[key + ".conv.weight"]
         if w.shape[1] > 1 and x.shape[0] > 1:
-            # MLX picks a less accurate 3x3 algorithm (Winograd-like) for larger batches; that noise reorders the
-            # TopK query slots. Convolve image by image so batched results match single-image results exactly.
+            # MLX switches 3x3 convs to Winograd once N*H*W >= 4096 (batch 3 here). Its extra error reorders the
+            # TopK query slots, so convolve image by image to keep batched results equal to single-image results.
+            # MLX after 0.32.3 can turn Winograd off with MLX_CONV_WINOGRAD=0 (ml-explore/mlx#4639).
             y = mx.concatenate([mx.conv2d(x[j:j + 1], w, padding=w.shape[1] // 2) for j in range(x.shape[0])])
         else:
             y = mx.conv2d(x, w, padding=w.shape[1] // 2)

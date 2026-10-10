@@ -1,4 +1,4 @@
-"""Baseline: ONNX Runtime + Core ML EP exactly as Ballform configures it."""
+"""Baseline: ONNX Runtime + Core ML EP, configured the way Ballform ran it before fast_rfdetr."""
 from __future__ import annotations
 
 import argparse
